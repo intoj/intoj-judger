@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/runner_linux</file>
+    </qresource>
+</RCC>

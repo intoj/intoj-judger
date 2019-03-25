@@ -1,0 +1,31 @@
+{
+    "dataDir": "/intOJ/judge/testdata",
+    "tempDir": "/intOJ/judge/tmp",
+    "redis":
+    {
+        "ip": "localhost",
+        "port": 6379
+    },
+    "database":
+    {
+        "name": "intOJ",
+        "user": "tyx",
+        "host": "",
+        "pass": "123456"
+    },
+    "spjTimeLimit": 5000,
+    "compileTimeLimit": 5000,
+    "language":
+    [
+        {
+            "name": "cpp",
+            "ext": "cpp",
+            "command": "g++ %s.* -o a -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static"
+        },
+        {
+            "name": "cpp11",
+            "ext": "cpp",
+            "command": "g++ a.cpp -o a -O2 -std=c++11 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static"
+        }
+    ]
+}
