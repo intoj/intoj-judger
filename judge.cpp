@@ -79,8 +79,10 @@ bool judgeThread::compile()
     QString command = settings->getCommand(language);
     command.replace("%s.*", "a." + extName);
     command.replace("%s", "a");
+    command = QString("timeout -s SIGKILL %1s ").arg(settings->getcompileTimeLimit() / 1000 + 1) + command;
     QProcess *compiler = new QProcess();
     compiler->setProcessChannelMode(QProcess::MergedChannels);
+    compiler->setStandardOutputFile(settings->getTempDir() + "/compile.info");
     compiler->setWorkingDirectory(settings->getTempDir());
     compiler->start(command);
     if (!compiler->waitForStarted(-1))
@@ -91,9 +93,19 @@ bool judgeThread::compile()
     }
     QElapsedTimer t;
     t.start();
-    bool isStopped = false;
+    bool isStopped = false, outputExceed = false;
     while (t.elapsed() < settings->getcompileTimeLimit())
     {
+        if (QFileInfo(settings->getTempDir() + "/compile.info").size() > 50 * 1024)
+        {
+            outputExceed = true;
+            break;
+        }
+        if (QFileInfo(settings->getTempDir() + "/a").size() > 32768 * 1024)
+        {
+            outputExceed = true;
+            break;
+        }
         if (compiler->state() != QProcess::Running)
         {
             isStopped = true;
@@ -105,13 +117,22 @@ bool judgeThread::compile()
     bool res = true;
     if (!isStopped)
     {
-        compiler->kill();
-        compileMessage = "Compile time limit.";
+        compiler->terminate();
+        if (!outputExceed)
+            compileMessage = "Compile time limit exceeded.";
+        else
+            compileMessage = "Compile output limit exceeded.";
         res = false;
     }
     else
     {
-        compileMessage = QString::fromUtf8(compiler->readAllStandardOutput().data());
+        QFile compileInfo(settings->getTempDir() + "/compile.info");
+        if (!compileInfo.open(QIODevice::ReadOnly))
+        {
+            compileMessage = "Cannot read compile message";
+        }
+        else
+            compileMessage = QString::fromUtf8(compileInfo.readAll());
         if (compiler->exitCode() != 0)
             res = false;
     }
@@ -461,30 +482,30 @@ void judgeThread::run()
     if (!compile())
     {
         qDebug() << "Compile error.\n";
-        db->updateStatus(runid, 3);
         db->updateCompilation(runid, compileMessage);
+        db->updateStatus(runid, 3);
         return;
     }
     qDebug() << "Compile success.\n";
     if (!readFile())
     {
         qDebug() << "Read data files error.\n";
-        db->updateStatus(runid, 2);
         db->updatesystemMessage(runid, "Data file not found.");
+        db->updateStatus(runid, 2);
         return;
     }
     if (!checkFile())
     {
         qDebug() << "Answer file not found.\n";
-        db->updateStatus(runid, 2);
         db->updatesystemMessage(runid, "Answer file not found.");
+        db->updateStatus(runid, 2);
         return;
     }
     qDebug() << "Read data files success," << inputFile.size() << "data(s)," << extraTest.size() << "extra test(s).\n";
     judge();
-    db->updateStatus(runid, status);
     db->updateTime(runid, timeUsed);
     db->updateMemory(runid, memoryUsed);
     db->updateScore(runid, score);
+    db->updateStatus(runid, status);
     qDebug() << "Finished judging.\n";
 }

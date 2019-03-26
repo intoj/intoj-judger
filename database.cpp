@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QSqlError>
 #include <QCoreApplication>
+#include <unistd.h>
 #include "database.h"
 
 Database::Database(QObject *parent) : QObject(parent) {}
@@ -34,10 +35,7 @@ void Database::Connect()
         if (!init())
         {
             qDebug("Cannot connet to database. retrying...");
-            QElapsedTimer t;
-            t.start();
-            while (t.elapsed() <= 1000)
-                QCoreApplication::processEvents();
+            sleep(1);
         }
     }
 }
@@ -49,6 +47,7 @@ int Database::getProblemID(int runid)
 
     if (mysql_query(database, QString("SELECT problem_id from records WHERE id=%1").arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when query problem_id.";
         exit(-1);
     }
@@ -76,6 +75,7 @@ QString Database::getSource(int runid)
 
     if (mysql_query(database, QString("SELECT code from records WHERE id=%1").arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when query code.";
         exit(-1);
     }
@@ -103,6 +103,7 @@ QString Database::getLanguage(int runid)
 
     if (mysql_query(database, QString("SELECT language from records WHERE id=%1").arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when query language.";
         exit(-1);
     }
@@ -130,6 +131,7 @@ int Database::getTimeLimit(int problemid)
 
     if (mysql_query(database, QString("SELECT time_limit from problems WHERE id=%1").arg(problemid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when query time_limit.";
         exit(-1);
     }
@@ -157,6 +159,7 @@ int Database::getMemoryLimit(int problemid)
 
     if (mysql_query(database, QString("SELECT memory_limit from problems WHERE id=%1").arg(problemid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when query memory_limit.";
         exit(-1);
     }
@@ -184,6 +187,7 @@ void Database::initRecord(int runid)
 
     if (mysql_query(database, QString("UPDATE records SET status=0,score=0,time_usage=0,memory_usage=0,result='{\"subtasks\":[]}',compilation='',system_message='' WHERE id=%1").arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when init record.";
         exit(-1);
     }
@@ -196,6 +200,7 @@ void Database::updateStatus(int runid, int status)
 
     if (mysql_query(database, QString("UPDATE records SET status=%1 WHERE id=%2").arg(status).arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update status.";
         exit(-1);
     }
@@ -206,11 +211,17 @@ void Database::updateCompilation(int runid, const QString &message)
     std::unique_lock<std::mutex> Lock(database_mutex);
     Connect();
 
-    if (mysql_query(database, QString("UPDATE records SET compilation='%1' WHERE id=%2").arg(message).arg(runid).toUtf8().data()))
+    char *buffer = new char[message.size() * 2 + 1];
+    mysql_real_escape_string(database, buffer, message.toUtf8().data(), message.toUtf8().size());
+
+    if (mysql_query(database, QString("UPDATE records SET compilation='%1' WHERE id=%2").arg(buffer).arg(runid).toUtf8().data()))
     {
+        delete [] buffer;
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update compilation.";
         exit(-1);
     }
+    delete [] buffer;
 }
 
 void Database::updatesystemMessage(int runid, const QString &message)
@@ -218,11 +229,17 @@ void Database::updatesystemMessage(int runid, const QString &message)
     std::unique_lock<std::mutex> Lock(database_mutex);
     Connect();
 
-    if (mysql_query(database, QString("UPDATE records SET system_message='%1' WHERE id=%2").arg(message).arg(runid).toUtf8().data()))
+    char *buffer = new char[message.size() * 2 + 1];
+    mysql_real_escape_string(database, buffer, message.toUtf8().data(), message.toUtf8().size());
+
+    if (mysql_query(database, QString("UPDATE records SET system_message='%1' WHERE id=%2").arg(buffer).arg(runid).toUtf8().data()))
     {
+        delete [] buffer;
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update system_message.";
         exit(-1);
     }
+    delete [] buffer;
 }
 
 void Database::updateResult(int runid, const QString &message)
@@ -230,11 +247,17 @@ void Database::updateResult(int runid, const QString &message)
     std::unique_lock<std::mutex> Lock(database_mutex);
     Connect();
 
-    if (mysql_query(database, QString("UPDATE records SET result='{\"subtasks\": %1}' WHERE id=%2").arg(message).arg(runid).toUtf8().data()))
+    char *buffer = new char[message.size() * 2 + 1];
+    mysql_real_escape_string(database, buffer, message.toUtf8().data(), message.toUtf8().size());
+
+    if (mysql_query(database, QString("UPDATE records SET result='{\"subtasks\": %1}' WHERE id=%2").arg(buffer).arg(runid).toUtf8().data()))
     {
+        delete [] buffer;
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update result.";
         exit(-1);
     }
+    delete [] buffer;
 }
 
 void Database::updateTime(int runid, int timeUsed)
@@ -244,6 +267,7 @@ void Database::updateTime(int runid, int timeUsed)
 
     if (mysql_query(database, QString("UPDATE records SET time_usage=%1 WHERE id=%2").arg(timeUsed).arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update time_usage.";
         exit(-1);
     }
@@ -256,6 +280,7 @@ void Database::updateMemory(int runid, int memoryUsed)
 
     if (mysql_query(database, QString("UPDATE records SET memory_usage=%1 WHERE id=%2").arg(memoryUsed).arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update memory_usage.";
         exit(-1);
     }
@@ -268,6 +293,7 @@ void Database::updateScore(int runid, int score)
 
     if (mysql_query(database, QString("UPDATE records SET score=%1 WHERE id=%2").arg(score).arg(runid).toUtf8().data()))
     {
+        qDebug() << mysql_error(database);
         qDebug() << "Error occured when update score.";
         exit(-1);
     }

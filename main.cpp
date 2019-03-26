@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QString>
+#include <unistd.h>
 #include "judge.h"
 #include "settings.h"
 #include "database.h"
@@ -25,10 +26,7 @@ int main(int argc, char *argv[])
     while ((c == nullptr || c->err) && retrytimes < 10)
     {
         qDebug("Cannot connect to redis, retrying... (times = %d)", ++retrytimes);
-        QElapsedTimer t;
-        t.start();
-        while (t.elapsed() <= 1000)
-            QCoreApplication::processEvents();
+        sleep(1);
         c = redisConnect(settings.getRedisIP().toLatin1().data(), settings.getRedisPort());
     }
 
@@ -57,10 +55,7 @@ int main(int argc, char *argv[])
         redisReply *reply = static_cast<redisReply *>(redisCommand(c, "LPOP intoj-waiting"));
         if (reply == nullptr || reply->type == REDIS_REPLY_NIL)
         {
-            QElapsedTimer t;
-            t.start();
-            while (t.elapsed() <= 200)
-                QCoreApplication::processEvents();
+            usleep(200000);
             continue;
         }
         int runid = QString(reply->str).toInt();
