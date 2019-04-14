@@ -18,14 +18,44 @@
     "language":
     [
         {
+            "name": "c",
+            "ext": "c",
+            "command": "gcc %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c99"
+        },
+        {
+            "name": "c11",
+            "ext": "c",
+            "command": "gcc %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c11"
+        },
+        {
+            "name": "c14",
+            "ext": "c",
+            "command": "gcc %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c14"
+        },
+        {
+            "name": "c17",
+            "ext": "c",
+            "command": "gcc %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c17"
+        },
+        {
             "name": "cpp",
             "ext": "cpp",
-            "command": "g++ %s.* -o a -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static"
+            "command": "g++ %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c++98"
         },
         {
             "name": "cpp11",
             "ext": "cpp",
-            "command": "g++ a.cpp -o a -O2 -std=c++11 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static"
+            "command": "g++ %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c++11"
+        },
+        {
+            "name": "cpp14",
+            "ext": "cpp",
+            "command": "g++ %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c++14"
+        },
+        {
+            "name": "cpp17",
+            "ext": "cpp",
+            "command": "g++ %s.* -o %s -O2 -DONLINE_JUDGE -lm -w -fmax-errors=5 -static -std=c++17"
         }
     ]
 }
